@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ensigna</title>
+
+<style>
+:root{
+  --bg:#0f1115;
+  --card:#171a21;
+  --accent:#22c55e;
+  --text:#e5e7eb;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui, Arial;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* LOGIN */
+.login{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  gap:10px;
+}
+
+.login input{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+.login button{
+  padding:10px 20px;
+  background:var(--accent);
+  border:none;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
+}
+
+/* APP */
+#app{display:none}
+
+/* NAVBAR */
+.nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 20px;
+  background:#0b0d12;
+}
+
+.search input{
+  padding:8px;
+  border-radius:8px;
+  border:none;
+  background:#1e222b;
+  color:white;
+}
+
+.btn{
+  background:var(--accent);
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:20px;
+  padding:20px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:12px;
+  overflow:hidden;
+  transition:.3s;
+}
+
+.card:hover{transform:translateY(-5px)}
+
+.card img{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+}
+
+.card-body{
+  padding:10px;
+}
+
+.price{
+  color:var(--accent);
+}
+
+/* CARRITO */
+.cart{
+  position:fixed;
+  right:-320px;
+  top:0;
+  width:320px;
+  height:100%;
+  background:#0b0d12;
+  transition:.3s;
+  padding:15px;
+}
+
+.cart.open{right:0}
+
+.close-cart{
+  background:none;
+  border:none;
+  color:white;
+  font-size:20px;
+  cursor:pointer;
+  float:right;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <h2>Iniciar sesión</h2>
+  <input type="text" id="user" placeholder="Tu nombre">
+  <input type="email" id="email" placeholder="Correo electrónico">
+  <input type="password" id="pass" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+<div class="nav">
+  <div>
+   👤 <span id="nombreUser"></span> | 📧 <span id="emailUser"></span>
+  </div>
+
+  <div style="text-align:center; font-weight:bold;">
+     Ensigna
+
+   <div class="search">
+    <input type="text" id="buscador" placeholder="Buscar...">
+  </div>
+  </div>
+
+  
+
+  <div>
+    <button class="btn" onclick="toggleCart()">🛒</button>
+    <button class="btn" onclick="logout()">Salir</button>
+  </div>
+</div>
+
+<div class="filters">
+  <button onclick="filtrar('todos', this)">Todos</button>
+  <button onclick="filtrar('onepiece', this)">One Piece</button>
+  <button onclick="filtrar('naruto', this)">Naruto</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="cart" id="cart">
+  <button class="close-cart" onclick="toggleCart()">✖</button>
+  <h2>Carrito</h2>
+  <div id="items"></div>
+  <p>Total: $<span id="total">0</span></p>
+</div>
+
+</div>
+
+<script>
+
+const productos = [
+  {id:1, nombre:"Polera Zoro", precio:10000,cat:"onepiece", img:'../Ensigna/Rononoa.jpeg'},
+  {id:2, nombre:"Pantalones Luffy", precio:12000,cat:"onepiece", img:'../Ensigna/images.jpeg'},
+  {id:3, nombre:"Polera Naruto", precio:11000,cat:"naruto", img:'../Ensigna/images (2).jpeg'},
+  {id:4,nombre:"Polera Sasuke",precio:11500,cat:"naruto",img: '../Ensigna/images (3).jpeg'},
+];
+
+let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+
+// LOGIN
+function login(){
+  const user = document.getElementById("user").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  if(user && email){
+    localStorage.setItem("usuario", user);
+    localStorage.setItem("email", email);
+    iniciarApp();
+  }else{
+    alert("Completa todos los campos");
+  }
+}
+
+function logout(){
+  localStorage.removeItem("usuario");
+  localStorage.removeItem("email");
+  location.reload();
+}
+
+function iniciarApp(){
+  const user = localStorage.getItem("usuario");
+  const email = localStorage.getItem("email");
+
+  if(user){
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+    document.getElementById("nombreUser").textContent = user;
+    document.getElementById("emailUser").textContent = email || "";
+  }
+}
+
+iniciarApp();
+
+// RENDER
+function render(lista){
+  const grid=document.getElementById("grid");
+  grid.innerHTML="";
+
+  lista.forEach(p=>{
+    grid.innerHTML+=`
+      <div class="card">
+        <div class="card-body">
+          <h3>${p.nombre}</h3>
+          <p class="price">$${p.precio}</p>
+          <button class="btn" onclick="add(${p.id})">Agregar</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function add(id){
+  const p=productos.find(x=>x.id===id);
+  carrito.push(p);
+  guardar();
+  pintarCarrito();
+}
+
+function pintarCarrito(){
+  const cont=document.getElementById("items");
+  cont.innerHTML="";
+  let total=0;
+
+  carrito.forEach((p,i)=>{
+    total+=p.precio;
+    cont.innerHTML+=`
+      <p>${p.nombre} - $${p.precio} 
+      <button onclick="remove(${i})">❌</button></p>`;
+  });
+
+  document.getElementById("total").textContent=total;
+}
+
+function remove(i){
+  carrito.splice(i,1);
+  guardar();
+  pintarCarrito();
+}
+
+function guardar(){
+  localStorage.setItem("carrito", JSON.stringify(carrito));
+}
+
+function toggleCart(){
+  document.getElementById("cart").classList.toggle("open");
+}
+
+function filtrar(cat, btn){
+  document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+
+  if(cat==="todos") render(productos);
+  else render(productos.filter(p=>p.cat===cat));
+}
+
+document.getElementById("buscador").addEventListener("input", e=>{
+  const txt=e.target.value.toLowerCase();
+  render(productos.filter(p=>p.nombre.toLowerCase().includes(txt)));
+});
+
+render(productos);
+pintarCarrito();
+
+</script>
+ 
+</body>
+</html>
